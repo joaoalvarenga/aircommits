@@ -1,0 +1,53 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+}
+
+button {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: 1px solid var(--vscode-button-border);
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--vscode-editorGroup-border);
+    margin-bottom: 10px;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    background-color: var(--vscode-editorGroupHeader-tabsBackground);
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--vscode-tab-inactiveForeground);
+}
+
+.tab-button.active {
+    border-bottom-color: var(--vscode-tab-activeBorder);
+    color: var(--vscode-tab-activeForeground);
+    background-color: var(--vscode-tab-activeBackground);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
