@@ -32,7 +32,7 @@ AirCommits now uses **Supabase Edge Functions** for the backend, providing:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/aircommits.git
+   git clone https://github.com/joaoalvarenga/aircommits.git
    cd aircommits
    ```
 
@@ -240,3 +240,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - [Supabase](https://supabase.com) for the amazing backend platform
 - [VS Code](https://code.visualstudio.com) for the extensible editor
 - [GitHub](https://github.com) for OAuth authentication 
+
+## TODO
+- Add all airports
+- Publish

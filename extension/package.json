@@ -5,7 +5,7 @@
   "description": "Connect with other developers at the same airport or on the same flight.",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.100.0"
+    "vscode": "^1.96.2"
   },
   "categories": [
     "Other"
@@ -91,7 +91,7 @@
   "devDependencies": {
     "@types/mocha": "^10.0.1",
     "@types/node": "20.x",
-    "@types/vscode": "^1.101.0",
+    "@types/vscode": "^1.96.2",
     "@typescript-eslint/eslint-plugin": "^6.4.0",
     "@typescript-eslint/parser": "^6.4.0",
     "@vscode/test-electron": "^2.3.4",
