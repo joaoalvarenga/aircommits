@@ -1,27 +1,32 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../database');
 
-const User = sequelize.define('User', {
-  githubId: {
-    type: DataTypes.STRING,
+const Airport = sequelize.define('Airport', {
+  code: {
+    type: DataTypes.STRING(3),
     allowNull: false,
     unique: true
   },
-  username: {
+  name: {
     type: DataTypes.STRING,
     allowNull: false
   },
-  email: {
+  city: {
     type: DataTypes.STRING,
     allowNull: false
   },
-  avatar: {
+  country: {
     type: DataTypes.STRING,
     allowNull: false
   },
-  accessToken: {
-    type: DataTypes.TEXT
+  latitude: {
+    type: DataTypes.DECIMAL(10, 8),
+    allowNull: false
+  },
+  longitude: {
+    type: DataTypes.DECIMAL(11, 8),
+    allowNull: false
   }
 });
 
-module.exports = User;
+module.exports = Airport; 

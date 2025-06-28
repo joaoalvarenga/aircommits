@@ -11,7 +11,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onUri"
+    "onUri",
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -27,6 +28,14 @@
       {
         "command": "aircommits.login.callback",
         "title": "Callback for Login with GitHub"
+      },
+      {
+        "command": "aircommits.openSettings",
+        "title": "Open AirCommits Settings"
+      },
+      {
+        "command": "aircommits.openFeed",
+        "title": "Open AirCommits Feed"
       }
     ],
     "viewsContainers": {
@@ -46,6 +55,29 @@
           "name": "Feed"
         }
       ]
+    },
+    "configuration": {
+      "title": "AirCommits",
+      "properties": {
+        "aircommits.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:3001",
+          "description": "AirCommits server URL"
+        },
+        "aircommits.autoDetectLocation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically detect user location"
+        },
+        "aircommits.manualAirport": {
+          "type": "string",
+          "description": "Manually set airport code (e.g., GRU, JFK)"
+        },
+        "aircommits.manualFlight": {
+          "type": "string",
+          "description": "Manually set flight number (e.g., LATAM 8001)"
+        }
+      }
     }
   },
   "scripts": {
@@ -67,5 +99,8 @@
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
     "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "axios": "^1.10.0"
   }
 }

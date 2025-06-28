@@ -1,24 +1,51 @@
-
 import * as vscode from 'vscode';
 import { AirCommitsViewProvider } from './AirCommitsView';
+import { AirCommitsService } from './AirCommitsService';
 
 export function activate(context: vscode.ExtensionContext) {
-
 	console.log(`AirCommits extension activated.`);
 
-	const provider = new AirCommitsViewProvider(context.extensionUri);
+	const service = new AirCommitsService();
+	const provider = new AirCommitsViewProvider(context.extensionUri, service);
+
+	// Initialize service
+	service.initialize(context);
 
 	console.log(`Registering webview view provider with ID: ${AirCommitsViewProvider.viewType}`);
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(AirCommitsViewProvider.viewType, provider));
 
+	// Register commands
 	context.subscriptions.push(vscode.commands.registerCommand('aircommits.login', async () => {
-		// The webview will send a message to trigger this
 		vscode.env.openExternal(vscode.Uri.parse('http://localhost:3001/auth/github'));
 	}));
 
-	
+	context.subscriptions.push(vscode.commands.registerCommand('aircommits.openSettings', () => {
+		vscode.commands.executeCommand('workbench.action.openSettings', 'aircommits');
+	}));
 
+	context.subscriptions.push(vscode.commands.registerCommand('aircommits.openFeed', () => {
+		vscode.commands.executeCommand('workbench.view.extension.aircommits-sidebar');
+	}));
+
+	// Handle file save events to send signals
+	context.subscriptions.push(
+		vscode.workspace.onDidSaveTextDocument(async (document) => {
+			// Only send signals for user files, not extension files
+			if (document.uri.scheme === 'file' && !document.uri.fsPath.includes('node_modules')) {
+				try {
+					const success = await service.sendSignal();
+					if (success) {
+						console.log('Signal sent successfully for file save');
+					}
+				} catch (error) {
+					console.error('Error sending signal on file save:', error);
+				}
+			}
+		})
+	);
+
+	// Handle URI callbacks for GitHub OAuth
 	context.subscriptions.push(vscode.window.registerUriHandler({
 		handleUri(uri: vscode.Uri): vscode.ProviderResult<void> {
 			console.log('received url', uri)
@@ -26,25 +53,88 @@ export function activate(context: vscode.ExtensionContext) {
 				const query = new URLSearchParams(uri.query);
 				const token = query.get('token');
 				if (token) {
-					// Store the token securely
-					context.secrets.store('aircommits.token', token);
-					vscode.window.showInformationMessage('Successfully logged in!');
+					service.setToken(token, context);
+					vscode.window.showInformationMessage('Successfully logged in to AirCommits!');
 					provider.postMessage({ type: 'loggedIn' });
 				} else {
-					vscode.window.showErrorMessage('Failed to log in.');
+					vscode.window.showErrorMessage('Failed to log in to AirCommits.');
 				}
 			}
 		}
 	}));
 
 	// Listen for messages from the webview
-	provider.onDidReceiveMessage((message: any) => {
+	provider.onDidReceiveMessage(async (message: any) => {
 		switch (message.type) {
 			case 'login':
 				vscode.commands.executeCommand('aircommits.login');
 				return;
+			case 'getSignals':
+				const signals = await service.getSignals(message.filters);
+				provider.postMessage({ type: 'signals', data: signals });
+				return;
+			case 'sendSignal':
+				const success = await service.sendSignal(message.airport, message.flight, message.message);
+				provider.postMessage({ type: 'signalSent', success });
+				return;
+			case 'getCurrentUser':
+				const user = await service.getCurrentUser();
+				provider.postMessage({ type: 'currentUser', data: user });
+				return;
+			case 'searchAirports':
+				const airports = await service.searchAirports(message.query);
+				provider.postMessage({ type: 'airports', data: airports });
+				return;
+			case 'getCurrentLocation':
+				try {
+					const location = await service.getLocation();
+					if (location) {
+						const airport = await service.detectAirport(location);
+						provider.postMessage({ 
+							type: 'currentLocation', 
+							data: { location, airport } 
+						});
+					} else {
+						provider.postMessage({ type: 'currentLocation', data: null });
+					}
+				} catch (error) {
+					console.error('Error getting current location:', error);
+					provider.postMessage({ type: 'currentLocation', data: null });
+				}
+				return;
+			case 'saveSettings':
+				const config = vscode.workspace.getConfiguration('aircommits');
+				await config.update('autoDetectLocation', message.settings.autoDetectLocation, vscode.ConfigurationTarget.Global);
+				await config.update('manualAirport', message.settings.manualAirport, vscode.ConfigurationTarget.Global);
+				await config.update('manualFlight', message.settings.manualFlight, vscode.ConfigurationTarget.Global);
+				provider.postMessage({ type: 'settingsSaved' });
+				return;
+			case 'getSettings':
+				const currentConfig = vscode.workspace.getConfiguration('aircommits');
+				provider.postMessage({ 
+					type: 'settings', 
+					data: {
+						autoDetectLocation: currentConfig.get('autoDetectLocation', true),
+						manualAirport: currentConfig.get('manualAirport', ''),
+						manualFlight: currentConfig.get('manualFlight', '')
+					}
+				});
+				return;
+			case 'logout':
+				await context.secrets.delete('aircommits.token');
+				provider.postMessage({ type: 'loggedOut' });
+				vscode.window.showInformationMessage('Logged out from AirCommits');
+				return;
 		}
 	});
+
+	// Check if user is logged in on startup
+	setTimeout(async () => {
+		const user = await service.getCurrentUser();
+		if (user) {
+			provider.postMessage({ type: 'loggedIn', user });
+		}
+	}, 1000);
 }
 
 export function deactivate() {}

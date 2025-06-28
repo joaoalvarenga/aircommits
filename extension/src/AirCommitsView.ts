@@ -1,5 +1,5 @@
-
 import * as vscode from 'vscode';
+import { AirCommitsService } from './AirCommitsService';
 
 export class AirCommitsViewProvider implements vscode.WebviewViewProvider {
 
@@ -11,6 +11,7 @@ export class AirCommitsViewProvider implements vscode.WebviewViewProvider {
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
+		private readonly _service: AirCommitsService
 	) { }
 
 	public resolveWebviewView(
@@ -58,25 +59,75 @@ export class AirCommitsViewProvider implements vscode.WebviewViewProvider {
 			</head>
 			<body>
 				<div id="login-section">
-					<h1>AirCommits</h1>
-					<button id="login-button">Login with GitHub</button>
+					<div class="header">
+						<h1>✈️ AirCommits</h1>
+						<p>Connect with developers at airports and on flights</p>
+					</div>
+					<button id="login-button" class="login-btn">Login with GitHub</button>
 				</div>
-				<div id="app-section" style="display:none;">
+				
+				<div id="app-section" style="display: none;">
+					<div class="header">
+						<h2>✈️ AirCommits</h2>
+						<div id="user-info" class="user-info"></div>
+					</div>
+					
 					<div class="tabs">
 						<button class="tab-button active" data-tab="feed">Feed</button>
 						<button class="tab-button" data-tab="settings">Settings</button>
 					</div>
+					
 					<div id="feed-tab" class="tab-content active">
-						<h2>Feed</h2>
-						<!-- Feed content will go here -->
-						<p>Latest signals will appear here.</p>
+						<div class="filters">
+							<input type="text" id="airport-filter" placeholder="Filter by airport (e.g., GRU, JFK)" class="filter-input">
+							<input type="text" id="flight-filter" placeholder="Filter by flight (e.g., LATAM 8001)" class="filter-input">
+							<button id="apply-filters" class="filter-btn">Apply Filters</button>
+							<button id="clear-filters" class="filter-btn secondary">Clear</button>
+						</div>
+						
+						<div id="signals-container" class="signals-container">
+							<div class="loading">Loading signals...</div>
+						</div>
 					</div>
+					
 					<div id="settings-tab" class="tab-content">
-						<h2>Settings</h2>
-						<!-- Settings content will go here -->
-						<p>Configure your AirCommits settings.</p>
+						<div class="settings-section">
+							<h3>Location Settings</h3>
+							<div class="setting-item">
+								<label>
+									<input type="checkbox" id="auto-detect" checked>
+									Automatically detect location
+								</label>
+							</div>
+							
+							<div id="current-location" class="current-location" style="display: none;">
+								<h4>Current Location</h4>
+								<div id="location-info" class="location-info">
+									<div class="location-loading">Detecting location...</div>
+								</div>
+							</div>
+							
+							<div id="manual-settings" class="manual-settings">
+								<div class="setting-item">
+									<label>Manual Airport Code:</label>
+									<input type="text" id="manual-airport" placeholder="e.g., GRU, JFK" class="setting-input">
+								</div>
+								<div class="setting-item">
+									<label>Manual Flight Number:</label>
+									<input type="text" id="manual-flight" placeholder="e.g., LATAM 8001" class="setting-input">
+								</div>
+							</div>
+							
+							<button id="save-settings" class="save-btn">Save Settings</button>
+						</div>
+						
+						<div class="settings-section">
+							<h3>Account</h3>
+							<button id="logout-btn" class="logout-btn">Logout</button>
+						</div>
 					</div>
 				</div>
+				
 				<script nonce="${nonce}" src="${scriptUri}"></script>
 			</body>
 			</html>`;
