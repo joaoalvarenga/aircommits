@@ -132,7 +132,7 @@
         userInfo.innerHTML = `
             <div class="user-profile">
                 <img src="${user.avatar}" alt="${user.username}" class="user-avatar">
-                <span class="username">@${user.username}</span>
+                <a class="username" href="https://github.com/${user.username}">@${user.username}</a>
             </div>
         `;
     }
@@ -154,7 +154,7 @@
                 <div class="signal-header">
                     <img src="${signal.userAvatar}" alt="${signal.username}" class="signal-avatar">
                     <div class="signal-info">
-                        <div class="signal-user">@${signal.username}</div>
+                        <div class="signal-user"><a style="text-decoration:none" href="https://github.com/${signal.username}">@${signal.username}</a></div>
                         <div class="signal-location">
                             ${signal.airport ? `🛫 ${signal.airport}` : ''}
                             ${signal.flight ? `✈️ ${signal.flight}` : ''}

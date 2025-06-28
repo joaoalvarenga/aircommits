@@ -7,10 +7,13 @@ export interface Location {
 }
 
 export interface Airport {
+  id: string;
   code: string;
   name: string;
   city: string;
   country: string;
+  latitude: number;
+  longitude: number;
 }
 
 export interface Signal {
@@ -33,11 +36,11 @@ export interface User {
 }
 
 export class AirCommitsService {
-  private serverUrl: string;
+  private supabaseUrl: string;
   private token: string | undefined;
 
   constructor() {
-    this.serverUrl = vscode.workspace.getConfiguration('aircommits').get('serverUrl', 'http://localhost:3001');
+    this.supabaseUrl = vscode.workspace.getConfiguration('aircommits').get('supabaseUrl', 'http://localhost:54321');
   }
 
   async initialize(context: vscode.ExtensionContext): Promise<void> {
@@ -65,7 +68,7 @@ export class AirCommitsService {
     if (!this.token) return null;
 
     try {
-      const response = await axios.get(`${this.serverUrl}/auth/me`, {
+      const response = await axios.get(`${this.supabaseUrl}/functions/v1/auth-me`, {
         headers: this.getHeaders()
       });
       return response.data;
@@ -77,6 +80,11 @@ export class AirCommitsService {
 
   async getLocation(): Promise<Location | null> {
     const config = vscode.workspace.getConfiguration('aircommits');
+    const autoDetect = config.get('autoDetectLocation', true);
+
+    if (!autoDetect) {
+      return null;
+    }
 
     try {
       // In a real implementation, you would use a geolocation service
@@ -94,7 +102,7 @@ export class AirCommitsService {
 
   async detectAirport(location: Location): Promise<Airport | null> {
     try {
-      const response = await axios.get(`${this.serverUrl}/airports/nearby`, {
+      const response = await axios.get(`${this.supabaseUrl}/functions/v1/airports/nearby`, {
         params: {
           lat: location.latitude,
           lng: location.longitude,
@@ -127,15 +135,15 @@ export class AirCommitsService {
 
       const signalData: any = {
         airport: airport || manualAirport || undefined,
-        flight: flight || manualFlight || undefined,
-        message: message || 'Working from VS Code'
+        flight: flight || manualFlight || undefined
       };
 
       // If no manual settings, try to detect location and airport
       if (!signalData.airport && !signalData.flight) {
         const location = await this.getLocation();
         if (location) {
-          signalData.location = location;
+          signalData.latitude = location.latitude;
+          signalData.longitude = location.longitude;
           const detectedAirport = await this.detectAirport(location);
           if (detectedAirport) {
             signalData.airport = detectedAirport.code;
@@ -143,7 +151,7 @@ export class AirCommitsService {
         }
       }
 
-      const response = await axios.post(`${this.serverUrl}/signals`, signalData, {
+      const response = await axios.post(`${this.supabaseUrl}/functions/v1/signals`, signalData, {
         headers: this.getHeaders()
       });
 
@@ -161,7 +169,7 @@ export class AirCommitsService {
       if (filters?.airport) params.append('airport', filters.airport);
       if (filters?.flight) params.append('flight', filters.flight);
 
-      const response = await axios.get(`${this.serverUrl}/signals?${params.toString()}`, {
+      const response = await axios.get(`${this.supabaseUrl}/functions/v1/signals?${params.toString()}`, {
         headers: this.getHeaders()
       });
       
@@ -174,7 +182,7 @@ export class AirCommitsService {
 
   async getAirports(): Promise<Airport[]> {
     try {
-      const response = await axios.get(`${this.serverUrl}/airports`, {
+      const response = await axios.get(`${this.supabaseUrl}/functions/v1/airports`, {
         headers: this.getHeaders()
       });
       
@@ -187,7 +195,7 @@ export class AirCommitsService {
 
   async searchAirports(query: string): Promise<Airport[]> {
     try {
-      const response = await axios.get(`${this.serverUrl}/airports/search`, {
+      const response = await axios.get(`${this.supabaseUrl}/functions/v1/airports/search`, {
         params: { q: query },
         headers: this.getHeaders()
       });

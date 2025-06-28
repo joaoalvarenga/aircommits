@@ -17,7 +17,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register commands
 	context.subscriptions.push(vscode.commands.registerCommand('aircommits.login', async () => {
-		vscode.env.openExternal(vscode.Uri.parse('http://localhost:3001/auth/github'));
+		const supabaseUrl = vscode.workspace.getConfiguration('aircommits').get('supabaseUrl', 'http://localhost:54321');
+		vscode.env.openExternal(vscode.Uri.parse(`${supabaseUrl}/functions/v1/auth-github`));
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('aircommits.openSettings', () => {

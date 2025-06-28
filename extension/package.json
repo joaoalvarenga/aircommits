@@ -59,10 +59,10 @@
     "configuration": {
       "title": "AirCommits",
       "properties": {
-        "aircommits.serverUrl": {
+        "aircommits.supabaseUrl": {
           "type": "string",
-          "default": "http://localhost:3001",
-          "description": "AirCommits server URL"
+          "default": "http://localhost:54321",
+          "description": "Supabase project URL (local development)"
         },
         "aircommits.autoDetectLocation": {
           "type": "boolean",

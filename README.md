@@ -1,175 +1,242 @@
 # ✈️ AirCommits
 
-Connect with other developers at airports and on flights! AirCommits is a VS Code extension that helps you find and connect with fellow developers who are working from the same airport or on the same flight.
+Connect with other developers at the same airport or on the same flight.
 
-## Features
+## 🚀 Features
 
-- 🔐 **GitHub Authentication** - Login securely with your GitHub account
-- 📍 **Automatic Location Detection** - Automatically detect your airport based on your location
-- ✈️ **Manual Configuration** - Set your airport or flight number manually
-- 📡 **Real-time Signals** - Send and receive signals when you save files
-- 🔍 **Public Feed** - View signals from other developers with filtering options
-- ⚙️ **Customizable Settings** - Configure your preferences for location detection
+- **GitHub Authentication** - Login with your GitHub account
+- **Automatic Location Detection** - Automatically detect your location via IP geolocation
+- **Manual Location Setting** - Set your airport or flight manually
+- **Real-time Signals** - Send signals when you save files in VS Code
+- **Public Feed** - View and filter signals by airport or flight
+- **Supabase Backend** - Scalable Edge Functions and PostgreSQL database
 
-## Installation
+## 🏗️ Architecture
+
+AirCommits now uses **Supabase Edge Functions** for the backend, providing:
+
+- **Scalability** - Automatic scaling with no server management
+- **Performance** - Edge Functions run close to users globally
+- **Security** - Row Level Security (RLS) and built-in authentication
+- **Cost-effective** - Pay-per-use pricing model
+
+## 📦 Installation
 
 ### Prerequisites
 
-- VS Code
-- Node.js (for development)
-- GitHub OAuth App (for authentication)
+1. **VS Code** installed
+2. **Supabase CLI** installed
+3. **GitHub OAuth App** configured
 
-### Setup
+### Quick Setup
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/yourusername/aircommits.git
    cd aircommits
    ```
 
-2. **Setup the server**
+2. **Setup Supabase** (automated)
    ```bash
-   cd server
-   npm install
+   ./setup-supabase.sh
    ```
 
-3. **Configure environment variables**
-   Create a `.env` file in the `server` directory:
-   ```env
+3. **Configure GitHub OAuth**
+   - Go to GitHub Settings > Developer settings > OAuth Apps
+   - Create new OAuth App
+   - Set Authorization callback URL: `http://localhost:54321/functions/v1/auth-github/callback`
+
+4. **Configure environment variables**
+   ```bash
+   # Edit supabase/.env with your GitHub OAuth credentials
    GITHUB_CLIENT_ID=your_github_client_id
    GITHUB_CLIENT_SECRET=your_github_client_secret
-   JWT_SECRET=your_jwt_secret_key_here
-   PORT=3001
+   JWT_SECRET=your_jwt_secret
    ```
 
-4. **Create GitHub OAuth App**
-   - Go to GitHub Settings > Developer settings > OAuth Apps
-   - Create a new OAuth App
-   - Set Authorization callback URL to: `http://localhost:3001/auth/github/callback`
-   - Copy the Client ID and Client Secret to your `.env` file
-
-5. **Start the server**
-   ```bash
-   cd server
-   npm start
-   ```
-
-6. **Install the extension**
+5. **Install VS Code extension**
    ```bash
    cd extension
    npm install
    npm run compile
    ```
 
-7. **Load the extension in VS Code**
-   - Open VS Code
-   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
-   - Type "Extensions: Install from VSIX"
-   - Select the compiled extension
+## 🔧 Development
 
-## Usage
+### Local Development
 
-### Getting Started
+1. **Start Supabase**
+   ```bash
+   supabase start
+   ```
 
-1. **Open the AirCommits sidebar**
-   - Look for the airplane icon in the VS Code activity bar
-   - Click on it to open the AirCommits panel
+2. **Compile extension**
+   ```bash
+   cd extension
+   npm run watch
+   ```
 
-2. **Login with GitHub**
-   - Click "Login with GitHub" in the AirCommits panel
-   - Authorize the application in your browser
-   - You'll be redirected back to VS Code
+3. **Test Edge Functions**
+   ```bash
+   # Test airports endpoint
+   curl http://localhost:54321/functions/v1/airports
+   
+   # Test signals endpoint
+   curl http://localhost:54321/functions/v1/signals
+   ```
 
-3. **Configure your location**
-   - Go to the Settings tab
-   - Choose between automatic location detection or manual configuration
-   - Set your airport code (e.g., GRU, JFK) or flight number (e.g., LATAM 8001)
+### Edge Functions
 
-### Sending Signals
+The backend consists of 4 Edge Functions:
 
-- **Automatic**: Every time you save a file, a signal is automatically sent to the server
-- **Manual**: Use the text area in the Feed tab to send custom messages
+- **`auth-github`** - GitHub OAuth authentication
+- **`auth-me`** - Get current user information
+- **`signals`** - Manage signals (create, read, filter)
+- **`airports`** - Manage airports (search, nearby)
 
-### Viewing the Feed
+### Database Schema
 
-- **All Signals**: View all recent signals from developers
-- **Filter by Airport**: Use the airport filter to see signals from a specific airport
-- **Filter by Flight**: Use the flight filter to see signals from a specific flight
+```sql
+-- Users table
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    github_id TEXT UNIQUE,
+    username TEXT,
+    email TEXT,
+    avatar TEXT,
+    access_token TEXT
+);
 
-### Settings
+-- Airports table
+CREATE TABLE airports (
+    id UUID PRIMARY KEY,
+    code TEXT UNIQUE,
+    name TEXT,
+    city TEXT,
+    country TEXT,
+    latitude DECIMAL,
+    longitude DECIMAL
+);
 
-- **Auto-detect Location**: Enable/disable automatic location detection
-- **Manual Airport**: Set a specific airport code
-- **Manual Flight**: Set a specific flight number
-
-## Development
-
-### Project Structure
-
-```
-aircommits/
-├── extension/          # VS Code extension
-│   ├── src/           # TypeScript source files
-│   ├── media/         # Webview assets (HTML, CSS, JS)
-│   └── package.json   # Extension manifest
-├── server/            # Backend server
-│   ├── models/        # Database models
-│   ├── routes/        # API routes
-│   └── index.js       # Server entry point
-└── README.md
-```
-
-### Building the Extension
-
-```bash
-cd extension
-npm run compile
-```
-
-### Running the Server
-
-```bash
-cd server
-npm start
+-- Signals table
+CREATE TABLE signals (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    airport TEXT,
+    flight TEXT,
+    message TEXT,
+    latitude DECIMAL,
+    longitude DECIMAL,
+    timestamp TIMESTAMP
+);
 ```
 
-### Database
+## 🚀 Deployment
 
-The application uses SQLite by default. The database file is created automatically at `server/aircommits.sqlite`.
+### Production Setup
 
-## API Endpoints
+1. **Create Supabase project**
+   ```bash
+   supabase projects create aircommits
+   ```
 
-### Authentication
-- `GET /auth/github` - Redirect to GitHub OAuth
-- `GET /auth/github/callback` - GitHub OAuth callback
-- `GET /auth/me` - Get current user info
+2. **Link project**
+   ```bash
+   supabase link --project-ref your-project-ref
+   ```
 
-### Signals
-- `GET /signals` - Get signals with optional filters
-- `POST /signals` - Create a new signal
-- `GET /signals/airports/nearby` - Get nearby airports
+3. **Deploy to production**
+   ```bash
+   # Deploy database
+   supabase db push
+   
+   # Deploy Edge Functions
+   supabase functions deploy
+   
+   # Set secrets
+   supabase secrets set GITHUB_CLIENT_ID=your_client_id
+   supabase secrets set GITHUB_CLIENT_SECRET=your_client_secret
+   supabase secrets set JWT_SECRET=your_jwt_secret
+   ```
 
-### Airports
-- `GET /airports` - Get all airports
-- `GET /airports/search` - Search airports
-- `GET /airports/nearby` - Get nearby airports
+4. **Update extension configuration**
+   - Change `aircommits.supabaseUrl` to your production Supabase URL
+   - Compile and publish the extension
 
-## Contributing
+## 📱 Usage
+
+1. **Install the extension** in VS Code
+2. **Login with GitHub** using the sidebar
+3. **Configure location settings**:
+   - Enable/disable automatic location detection
+   - Set manual airport or flight
+4. **Start coding** - signals are automatically sent when you save files
+5. **View the feed** to see other developers nearby
+
+## 🔧 Configuration
+
+### Extension Settings
+
+- `aircommits.supabaseUrl` - Supabase project URL
+- `aircommits.autoDetectLocation` - Enable automatic location detection
+- `aircommits.manualAirport` - Manually set airport code
+- `aircommits.manualFlight` - Manually set flight number
+
+### Environment Variables
+
+- `GITHUB_CLIENT_ID` - GitHub OAuth App client ID
+- `GITHUB_CLIENT_SECRET` - GitHub OAuth App client secret
+- `JWT_SECRET` - Secret key for JWT tokens
+- `SUPABASE_URL` - Supabase project URL
+- `SUPABASE_ANON_KEY` - Supabase anonymous key
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Edge Function not responding**
+   ```bash
+   supabase functions deploy auth-github
+   ```
+
+2. **CORS errors**
+   - Check if CORS headers are set in Edge Functions
+
+3. **Authentication errors**
+   ```bash
+   supabase secrets list
+   ```
+
+4. **Database connection issues**
+   ```bash
+   supabase db reset
+   ```
+
+## 📊 Migration from Express Server
+
+This project was migrated from a local Express server to Supabase Edge Functions. See [SUPABASE_MIGRATION.md](./SUPABASE_MIGRATION.md) for detailed migration guide.
+
+### Key Changes
+
+- **Backend**: Express.js → Supabase Edge Functions
+- **Database**: SQLite → PostgreSQL
+- **Authentication**: Custom JWT → Supabase Auth + GitHub OAuth
+- **Deployment**: Local server → Serverless Edge Functions
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Test locally with `supabase start`
 5. Submit a pull request
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License.
+MIT License - see [LICENSE](LICENSE) file for details.
 
-## Support
+## 🙏 Acknowledgments
 
-If you encounter any issues or have questions, please open an issue on GitHub.
-
----
-
-**Happy coding from the skies! ✈️💻** 
+- [Supabase](https://supabase.com) for the amazing backend platform
+- [VS Code](https://code.visualstudio.com) for the extensible editor
+- [GitHub](https://github.com) for OAuth authentication 

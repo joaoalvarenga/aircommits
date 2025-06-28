@@ -86,6 +86,7 @@ button:hover {
     font-size: 12px;
     color: var(--vscode-descriptionForeground);
     font-weight: 500;
+    text-decoration: none;
 }
 
 /* Tabs */
@@ -177,7 +178,6 @@ button:hover {
 
 /* Signals */
 .signals-container {
-    max-height: 300px;
     overflow-y: auto;
     margin-bottom: 16px;
 }
