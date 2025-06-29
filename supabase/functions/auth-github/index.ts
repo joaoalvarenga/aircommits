@@ -15,11 +15,17 @@ serve(async (req) => {
   try {
     const url = new URL(req.url)
     const code = url.searchParams.get('code')
-
+    const schema = url.searchParams.get('schema');
     if (!code) {
-        const githubUrl = `https://github.com/login/oauth/authorize?client_id=${Deno.env.get('GITHUB_CLIENT_ID')}&scope=read:user,user:email`;
+        let state = '';
+        if (schema) {
+          state = `&state=${schema}`
+        }
+        const githubUrl = `https://github.com/login/oauth/authorize?client_id=${Deno.env.get('GITHUB_CLIENT_ID')}&scope=read:user,user:email${state}`;
         return Response.redirect(githubUrl, 302);
     }
+
+    const state = url.searchParams.get('state');
 
     // Exchange code for access token
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
@@ -128,8 +134,10 @@ Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       username: user.username
     }, jwtSecret)
 
+    const extensionUri = state ? `${state}://${Deno.env.get('EXTENSION_AUTH_URI')}` : `vscode://${Deno.env.get('EXTENSION_AUTH_URI')}`;
+
     return Response.redirect(
-      `${Deno.env.get('EXTENSION_AUTH_URI')}?token=${token}`, 302);
+      `${extensionUri}?token=${token}`, 302);
 
   } catch (error) {
     console.error('Authentication error:', error)
@@ -162,7 +170,7 @@ async function createJWT(payload: any, secret: string): Promise<string> {
   const claims = {
     ...payload,
     iat: now,
-    exp: now + (7 * 24 * 60 * 60) // 7 days
+    exp: now + (365 * 24 * 60 * 60) // 7 days
   }
 
   const encodedHeader = btoa(JSON.stringify(header))

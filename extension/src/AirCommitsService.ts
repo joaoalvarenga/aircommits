@@ -80,11 +80,6 @@ export class AirCommitsService {
 
   async getLocation(): Promise<Location | null> {
     const config = vscode.workspace.getConfiguration('aircommits');
-    const autoDetect = config.get('autoDetectLocation', true);
-
-    if (!autoDetect) {
-      return null;
-    }
 
     try {
       // In a real implementation, you would use a geolocation service
@@ -106,7 +101,7 @@ export class AirCommitsService {
         params: {
           lat: location.latitude,
           lng: location.longitude,
-          radius: 50 // 50km radius
+          radius: 5 // 50km radius
         },
         headers: this.getHeaders()
       });
@@ -132,6 +127,7 @@ export class AirCommitsService {
       const config = vscode.workspace.getConfiguration('aircommits');
       const manualAirport = config.get('manualAirport', '');
       const manualFlight = config.get('manualFlight', '');
+      const autoDetectLocation = config.get('autoDetectLocation', true);
 
       const signalData: any = {
         airport: airport || manualAirport || undefined,
@@ -139,7 +135,9 @@ export class AirCommitsService {
       };
 
       // If no manual settings, try to detect location and airport
-      if (!signalData.airport && !signalData.flight) {
+      if (autoDetectLocation) {
+        signalData.flight = undefined
+        signalData.airport = undefined
         const location = await this.getLocation();
         if (location) {
           signalData.latitude = location.latitude;
@@ -151,6 +149,10 @@ export class AirCommitsService {
         }
       }
 
+      if (!signalData.airport && !signalData.flight) {
+        return false;
+      }
+
       const response = await axios.post(`${this.supabaseUrl}/functions/v1/signals`, signalData, {
         headers: this.getHeaders()
       });
@@ -158,7 +160,7 @@ export class AirCommitsService {
       return response.status === 201;
     } catch (error) {
       console.error('Error sending signal:', error);
-      vscode.window.showErrorMessage('Failed to send signal');
+      vscode.window.showErrorMessage(`Failed to send signal ${error}`);
       return false;
     }
   }

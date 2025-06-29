@@ -6,6 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Validate flight code format
+function isValidFlightCode(flight: string): boolean {
+  // Example: "LA1234"
+  const regex = /^[A-Z]{2}\d{4}$/;
+  return regex.test(flight);
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -89,7 +96,7 @@ serve(async (req) => {
       }
 
       const token = authHeader.replace('Bearer ', '')
-      const jwtSecret = Deno.env.get('JWT_SECRET') || 'your-default-jwt-secret'
+      const jwtSecret = Deno.env.get('JWT_SECRET')
       const decoded = await verifyJWT(token, jwtSecret)
       
       if (!decoded) {
@@ -116,6 +123,53 @@ serve(async (req) => {
           JSON.stringify({ error: 'User not found' }),
           { 
             status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      if (flight && !isValidFlightCode(flight)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid flight code format' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      if (airport) {
+        const { data: existingAirport, error: airportError } = await supabaseClient
+          .from('airports')
+          .select('code')
+          .eq('code', airport)
+          .single()
+
+        if (airportError || !existingAirport) {
+          return new Response(
+          JSON.stringify({ error: 'Airport not found' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+        }
+      }
+
+      const now = new Date();
+      const minutesAgo = new Date(now.getTime() - (15 * 60 * 1000));
+
+      // Get lastSignal from database
+      const { data: lastSignal } = await supabaseClient
+        .from('signals')
+        .select('timestamp')
+        .gte('timestamp', minutesAgo.toISOString())
+        .single()
+
+      if (lastSignal) {
+        return new Response(
+          JSON.stringify({ error: 'Wait for the next signal' }),
+          { 
+            status: 429, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         )

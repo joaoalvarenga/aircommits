@@ -13,6 +13,8 @@ body {
     margin: 0;
     padding: 16px;
     line-height: 1.4;
+    overflow-y: auto;
+    max-height: 100vh;
 }
 
 button {
@@ -179,6 +181,7 @@ button:hover {
 /* Signals */
 .signals-container {
     overflow-y: auto;
+    max-height: 60vh;
     margin-bottom: 16px;
 }
 
@@ -441,4 +444,8 @@ button:hover {
 
 .signals-container::-webkit-scrollbar-thumb:hover {
     background: var(--vscode-scrollbarSlider-hoverBackground);
+}
+
+input.invalid {
+    border-color: var(--vscode-errorForeground);
 }

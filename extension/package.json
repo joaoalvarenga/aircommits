@@ -75,7 +75,7 @@
         },
         "aircommits.manualFlight": {
           "type": "string",
-          "description": "Manually set flight number (e.g., LATAM 8001)"
+          "description": "Manually set flight number (e.g., LA8001)"
         }
       }
     }

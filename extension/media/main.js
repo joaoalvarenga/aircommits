@@ -29,6 +29,11 @@
     const locationInfoDiv = document.getElementById('location-info');
     const manualSettingsDiv = document.getElementById('manual-settings');
 
+    const isValidFlightCode = (flight) => {
+        const regex = /^[A-Z]{2}\d{4}$/;
+        return regex.test(flight);
+    }
+
     // Event listeners
     loginButton.addEventListener('click', () => {
         vscode.postMessage({ type: 'login' });
@@ -65,6 +70,14 @@
     });
 
     saveSettingsBtn.addEventListener('click', () => {
+        manualFlightInput.classList.remove('invalid');
+        if (manualFlightInput.value && !isValidFlightCode(manualFlightInput.value.trim())) {
+            showNotification('Invalid flight code format');
+            //mark the input as invalid
+            manualFlightInput.classList.add('invalid');
+            return;
+        }
+
         const settings = {
             autoDetectLocation: autoDetectCheckbox.checked,
             manualAirport: manualAirportInput.value.trim(),
@@ -280,6 +293,10 @@
                 
             case 'currentUser':
                 if (message.data) {
+                    if (currentUser === null) {
+                        showAppSection();
+                        loadSignals();
+                    }
                     updateUserInfo(message.data);
                 }
                 break;
@@ -307,6 +324,11 @@
                     manualAirportInput.value = message.data.manualAirport || '';
                     manualFlightInput.value = message.data.manualFlight || '';
                     toggleManualSettings();
+                    if (autoDetectCheckbox.checked) {
+                        detectCurrentLocation();
+                    } else {
+                        hideCurrentLocation();
+                    }
                 }
                 break;
                 

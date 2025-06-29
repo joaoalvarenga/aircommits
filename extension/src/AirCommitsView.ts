@@ -80,7 +80,7 @@ export class AirCommitsViewProvider implements vscode.WebviewViewProvider {
 					<div id="feed-tab" class="tab-content active">
 						<div class="filters">
 							<input type="text" id="airport-filter" placeholder="Filter by airport (e.g., GRU, JFK)" class="filter-input">
-							<input type="text" id="flight-filter" placeholder="Filter by flight (e.g., LATAM 8001)" class="filter-input">
+							<input type="text" id="flight-filter" placeholder="Filter by flight (e.g., LA8001)" class="filter-input">
 							<button id="apply-filters" class="filter-btn">Apply Filters</button>
 							<button id="clear-filters" class="filter-btn secondary">Clear</button>
 						</div>
@@ -114,7 +114,7 @@ export class AirCommitsViewProvider implements vscode.WebviewViewProvider {
 								</div>
 								<div class="setting-item">
 									<label>Manual Flight Number:</label>
-									<input type="text" id="manual-flight" placeholder="e.g., LATAM 8001" class="setting-input">
+									<input type="text" id="manual-flight" placeholder="e.g., LA8001" class="setting-input">
 								</div>
 							</div>
 							

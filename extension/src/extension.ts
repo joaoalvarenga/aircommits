@@ -18,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Register commands
 	context.subscriptions.push(vscode.commands.registerCommand('aircommits.login', async () => {
 		const supabaseUrl = vscode.workspace.getConfiguration('aircommits').get('supabaseUrl', 'http://localhost:54321');
-		vscode.env.openExternal(vscode.Uri.parse(`${supabaseUrl}/functions/v1/auth-github`));
+		vscode.env.openExternal(vscode.Uri.parse(`${supabaseUrl}/functions/v1/auth-github?schema=${vscode.env.uriScheme}`));
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('aircommits.openSettings', () => {
@@ -38,6 +38,8 @@ export function activate(context: vscode.ExtensionContext) {
 					const success = await service.sendSignal();
 					if (success) {
 						console.log('Signal sent successfully for file save');
+						const signals = await service.getSignals();
+						provider.postMessage({ type: 'signals', data: signals });
 					}
 				} catch (error) {
 					console.error('Error sending signal on file save:', error);
@@ -49,7 +51,6 @@ export function activate(context: vscode.ExtensionContext) {
 	// Handle URI callbacks for GitHub OAuth
 	context.subscriptions.push(vscode.window.registerUriHandler({
 		handleUri(uri: vscode.Uri): vscode.ProviderResult<void> {
-			console.log('received url', uri)
 			if (uri.path === '/auth/callback') {
 				const query = new URLSearchParams(uri.query);
 				const token = query.get('token');
@@ -128,14 +129,6 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 		}
 	});
-
-	// Check if user is logged in on startup
-	setTimeout(async () => {
-		const user = await service.getCurrentUser();
-		if (user) {
-			provider.postMessage({ type: 'loggedIn', user });
-		}
-	}, 1000);
 }
 
 export function deactivate() {}
