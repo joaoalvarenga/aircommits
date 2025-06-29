@@ -34,6 +34,75 @@ serve(async (req) => {
       const flight = url.searchParams.get('flight')
       const limit = parseInt(url.searchParams.get('limit') || '50')
 
+      // Check if this is a request for user's own signals
+      if (url.pathname.endsWith('/my')) {
+        const authHeader = req.headers.get('authorization')
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return new Response(
+            JSON.stringify({ error: 'No token provided' }),
+            { 
+              status: 401, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
+        const token = authHeader.replace('Bearer ', '')
+        const jwtSecret = Deno.env.get('JWT_SECRET')
+        const decoded = await verifyJWT(token, jwtSecret)
+        
+        if (!decoded) {
+          return new Response(
+            JSON.stringify({ error: 'Invalid token' }),
+            { 
+              status: 401, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
+        // Get user's signals
+        const { data: signals, error } = await supabaseClient
+          .from('signals')
+          .select(`
+            id,
+            airport,
+            flight,
+            message,
+            latitude,
+            longitude,
+            timestamp,
+            users!inner(id, username, avatar)
+          `)
+          .eq('user_id', decoded.id)
+          .order('timestamp', { ascending: false })
+          .limit(limit)
+
+        if (error) throw error
+
+        const formattedSignals = signals?.map(signal => ({
+          id: signal.id,
+          userId: signal.users.id,
+          username: signal.users.username,
+          userAvatar: signal.users.avatar,
+          airport: signal.airport,
+          flight: signal.flight,
+          location: signal.latitude && signal.longitude ? {
+            latitude: parseFloat(signal.latitude),
+            longitude: parseFloat(signal.longitude)
+          } : undefined,
+          timestamp: signal.timestamp,
+          message: signal.message
+        })) || []
+
+        return new Response(
+          JSON.stringify(formattedSignals),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
       let query = supabaseClient
         .from('signals')
         .select(`
@@ -222,6 +291,88 @@ serve(async (req) => {
         JSON.stringify(formattedSignal),
         { 
           status: 201,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    } else if (req.method === 'DELETE') {
+      // Delete a signal
+      const authHeader = req.headers.get('authorization')
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(
+          JSON.stringify({ error: 'No token provided' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      const token = authHeader.replace('Bearer ', '')
+      const jwtSecret = Deno.env.get('JWT_SECRET')
+      const decoded = await verifyJWT(token, jwtSecret)
+      
+      if (!decoded) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid token' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      const url = new URL(req.url)
+      const signalId = url.pathname.split('/').pop()
+
+      if (!signalId) {
+        return new Response(
+          JSON.stringify({ error: 'Signal ID is required' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      // Check if the signal belongs to the user
+      const { data: signal, error: signalError } = await supabaseClient
+        .from('signals')
+        .select('user_id')
+        .eq('id', signalId)
+        .single()
+
+      if (signalError || !signal) {
+        return new Response(
+          JSON.stringify({ error: 'Signal not found' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      if (signal.user_id !== decoded.id) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized to delete this signal' }),
+          { 
+            status: 403, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      // Delete the signal
+      const { error: deleteError } = await supabaseClient
+        .from('signals')
+        .delete()
+        .eq('id', signalId)
+
+      if (deleteError) throw deleteError
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { 
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )

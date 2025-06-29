@@ -138,6 +138,14 @@ export function activate(context: vscode.ExtensionContext) {
 				provider.postMessage({ type: 'loggedOut' });
 				vscode.window.showInformationMessage('Logged out from AirCommits');
 				return;
+			case 'getUserSignals':
+				const userSignals = await service.getUserSignals();
+				provider.postMessage({ type: 'userSignals', data: userSignals });
+				return;
+			case 'deleteSignal':
+				const deleteSuccess = await service.deleteSignal(message.signalId);
+				provider.postMessage({ type: 'signalDeleted', success: deleteSuccess });
+				return;
 		}
 	});
 }

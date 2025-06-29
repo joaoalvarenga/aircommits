@@ -209,4 +209,34 @@ export class AirCommitsService {
       return [];
     }
   }
+
+  async getUserSignals(): Promise<Signal[]> {
+    if (!this.token) return [];
+
+    try {
+      const response = await axios.get(`${this.supabaseUrl}/functions/v1/signals/my`, {
+        headers: this.getHeaders()
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error getting user signals:', error);
+      return [];
+    }
+  }
+
+  async deleteSignal(signalId: string): Promise<boolean> {
+    if (!this.token) return false;
+
+    try {
+      const response = await axios.delete(`${this.supabaseUrl}/functions/v1/signals/${signalId}`, {
+        headers: this.getHeaders()
+      });
+      
+      return response.status === 200;
+    } catch (error) {
+      console.error('Error deleting signal:', error);
+      return false;
+    }
+  }
 } 

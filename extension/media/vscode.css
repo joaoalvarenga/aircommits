@@ -507,6 +507,105 @@ input.invalid {
 }
 
 .autocomplete-item .airport-location {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--vscode-descriptionForeground);
+}
+
+/* My Signals specific styles */
+.my-signal .signal-header {
+    position: relative;
+}
+
+.signal-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    font-size: 14px;
+    color: var(--vscode-descriptionForeground);
+    transition: all 0.2s;
+}
+
+.delete-btn:hover {
+    background-color: var(--vscode-inputValidation-errorBackground);
+    color: var(--vscode-inputValidation-errorForeground);
+}
+
+/* Delete confirmation dialog */
+.delete-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.delete-dialog {
+    background-color: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.delete-dialog h3 {
+    margin: 0 0 12px 0;
+    color: var(--vscode-foreground);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.delete-dialog p {
+    margin: 0 0 20px 0;
+    color: var(--vscode-descriptionForeground);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.dialog-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.dialog-buttons button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--vscode-button-border);
+}
+
+.cancel-btn {
+    background-color: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+}
+
+.cancel-btn:hover {
+    background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.confirm-btn {
+    background-color: var(--vscode-inputValidation-errorBackground);
+    color: var(--vscode-inputValidation-errorForeground);
+    border-color: var(--vscode-inputValidation-errorBorder);
+}
+
+.confirm-btn:hover {
+    background-color: var(--vscode-inputValidation-errorHoverBackground);
 }

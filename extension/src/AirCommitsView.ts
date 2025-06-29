@@ -74,6 +74,7 @@ export class AirCommitsViewProvider implements vscode.WebviewViewProvider {
 					
 					<div class="tabs">
 						<button class="tab-button active" data-tab="feed">Feed</button>
+						<button class="tab-button" data-tab="my-signals">My Signals</button>
 						<button class="tab-button" data-tab="settings">Settings</button>
 					</div>
 					
@@ -87,6 +88,12 @@ export class AirCommitsViewProvider implements vscode.WebviewViewProvider {
 						
 						<div id="signals-container" class="signals-container">
 							<div class="loading">Loading signals...</div>
+						</div>
+					</div>
+					
+					<div id="my-signals-tab" class="tab-content">
+						<div id="my-signals-container" class="signals-container">
+							<div class="loading">Loading your signals...</div>
 						</div>
 					</div>
 					

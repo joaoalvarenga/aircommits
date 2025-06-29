@@ -31,6 +31,7 @@
     const locationInfoDiv = document.getElementById('location-info');
     const manualSettingsDiv = document.getElementById('manual-settings');
     const autoPublishCheckbox = document.getElementById('auto-publish');
+    const mySignalsContainer = document.getElementById('my-signals-container');
 
     const isValidFlightCode = (flight) => {
         const regex = /^[A-Z]{2}\d{4}$/;
@@ -241,6 +242,8 @@
         // Load data for the tab
         if (tabName === 'feed') {
             loadSignals();
+        } else if (tabName === 'my-signals') {
+            loadMySignals();
         } else if (tabName === 'settings') {
             loadSettings();
             if (autoDetectCheckbox instanceof HTMLInputElement && autoDetectCheckbox.checked) {
@@ -308,6 +311,54 @@
         signalsContainer.innerHTML = signalsHTML;
     }
 
+    function renderMySignals(signals) {
+        if (!mySignalsContainer) return;
+        
+        if (signals.length === 0) {
+            mySignalsContainer.innerHTML = `
+                <div class="no-signals">
+                    <p>You haven't sent any signals yet. Start coding to send your first signal!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const signalsHTML = signals.map(signal => `
+            <div class="signal-card my-signal">
+                <div class="signal-header">
+                    <img src="${signal.userAvatar}" alt="${signal.username}" class="signal-avatar">
+                    <div class="signal-info">
+                        <div class="signal-user"><a style="text-decoration:none" href="https://github.com/${signal.username}">@${signal.username}</a></div>
+                        <div class="signal-location">
+                            ${signal.airport ? `🛫 ${signal.airport}` : ''}
+                            ${signal.flight ? `✈️ ${signal.flight}` : ''}
+                        </div>
+                    </div>
+                    <div class="signal-actions">
+                        <div class="signal-time">${formatTime(signal.timestamp)}</div>
+                        <button class="delete-btn" data-signal-id="${signal.id}" title="Delete signal">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+                <div class="signal-content">
+                    ${signal.message || 'Working from VS Code'}
+                </div>
+            </div>
+        `).join('');
+        
+        mySignalsContainer.innerHTML = signalsHTML;
+        
+        // Add event listeners for delete buttons
+        mySignalsContainer.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const signalId = btn.getAttribute('data-signal-id');
+                showDeleteConfirmation(signalId);
+            });
+        });
+    }
+
     function formatTime(timestamp) {
         const date = new Date(timestamp);
         const now = new Date();
@@ -329,6 +380,54 @@
         vscode.postMessage({ 
             type: 'getSignals', 
             filters: {} 
+        });
+    }
+
+    function loadMySignals() {
+        if (mySignalsContainer) mySignalsContainer.innerHTML = '<div class="loading">Loading your signals...</div>';
+        vscode.postMessage({ 
+            type: 'getUserSignals'
+        });
+    }
+
+    function showDeleteConfirmation(signalId) {
+        const dialog = document.createElement('div');
+        dialog.className = 'delete-dialog-overlay';
+        dialog.innerHTML = `
+            <div class="delete-dialog">
+                <h3>Delete Signal</h3>
+                <p>Are you sure you want to delete this signal? This action cannot be undone.</p>
+                <div class="dialog-buttons">
+                    <button class="cancel-btn">Cancel</button>
+                    <button class="confirm-btn">Delete</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // Add event listeners
+        dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+            dialog.remove();
+        });
+        
+        dialog.querySelector('.confirm-btn').addEventListener('click', () => {
+            dialog.remove();
+            deleteSignal(signalId);
+        });
+        
+        // Close dialog when clicking outside
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
+                dialog.remove();
+            }
+        });
+    }
+
+    function deleteSignal(signalId) {
+        vscode.postMessage({ 
+            type: 'deleteSignal', 
+            signalId: signalId 
         });
     }
 
@@ -494,6 +593,19 @@
                 
             case 'settingsSaved':
                 showNotification('Settings saved successfully!');
+                break;
+                
+            case 'userSignals':
+                renderMySignals(message.data);
+                break;
+                
+            case 'signalDeleted':
+                if (message.success) {
+                    showNotification('Signal deleted successfully!');
+                    loadMySignals();
+                } else {
+                    showNotification('Failed to delete signal');
+                }
                 break;
                 
             case 'loggedOut':
