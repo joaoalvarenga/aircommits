@@ -447,5 +447,56 @@ button:hover {
 }
 
 input.invalid {
-    border-color: var(--vscode-errorForeground);
+    border-color: var(--vscode-errorForeground) !important;
+}
+
+/* Autocomplete Dropdown */
+.autocomplete-dropdown {
+    position: absolute;
+    background-color: var(--vscode-dropdown-background);
+    border: 1px solid var(--vscode-dropdown-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.autocomplete-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--vscode-panel-border);
+    transition: background-color 0.2s;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover {
+    background-color: var(--vscode-list-hoverBackground);
+}
+
+.autocomplete-item .airport-code {
+    font-weight: 600;
+    color: var(--vscode-foreground);
+    margin-right: 12px;
+    min-width: 40px;
+}
+
+.autocomplete-item .airport-details {
+    flex: 1;
+}
+
+.autocomplete-item .airport-name {
+    font-size: 12px;
+    color: var(--vscode-foreground);
+    margin-bottom: 2px;
+}
+
+.autocomplete-item .airport-location {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
 }

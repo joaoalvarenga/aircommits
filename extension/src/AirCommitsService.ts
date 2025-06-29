@@ -160,7 +160,7 @@ export class AirCommitsService {
       return response.status === 201;
     } catch (error) {
       console.error('Error sending signal:', error);
-      vscode.window.showErrorMessage(`Failed to send signal ${error}`);
+      // vscode.window.showErrorMessage(`Failed to send signal ${error}`);
       return false;
     }
   }

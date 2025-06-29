@@ -85,7 +85,7 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			case 'searchAirports':
 				const airports = await service.searchAirports(message.query);
-				provider.postMessage({ type: 'airports', data: airports });
+				provider.postMessage({ type: 'airportSearchResults', data: airports });
 				return;
 			case 'getCurrentLocation':
 				try {

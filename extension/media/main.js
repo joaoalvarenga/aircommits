@@ -8,6 +8,8 @@
     let currentUser = null;
     let currentSignals = [];
     let currentLocation = null;
+    let searchTimeout = null;
+    let currentAirports = [];
 
     // DOM elements
     const loginSection = document.getElementById('login-section');
@@ -34,15 +36,98 @@
         return regex.test(flight);
     }
 
+    // Autocomplete functionality
+    function createAutocompleteDropdown(input, results) {
+        // Remove existing dropdown
+        const existingDropdown = document.querySelector('.autocomplete-dropdown');
+        if (existingDropdown) {
+            existingDropdown.remove();
+        }
+
+        if (!results || results.length === 0) {
+            return;
+        }
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'autocomplete-dropdown';
+        
+        results.forEach(airport => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.innerHTML = `
+                <div class="airport-code">${airport.code}</div>
+                <div class="airport-details">
+                    <div class="airport-name">${airport.name}</div>
+                    <div class="airport-location">${airport.city}, ${airport.country}</div>
+                </div>
+            `;
+            
+            item.addEventListener('click', () => {
+                input.value = airport.code;
+                dropdown.remove();
+            });
+            
+            dropdown.appendChild(item);
+        });
+
+        // Position dropdown below input
+        const rect = input.getBoundingClientRect();
+        dropdown.style.position = 'absolute';
+        dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+        dropdown.style.left = `${rect.left + window.scrollX}px`;
+        dropdown.style.width = `${rect.width}px`;
+        dropdown.style.zIndex = '1000';
+
+        document.body.appendChild(dropdown);
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function closeDropdown(e) {
+            const target = e.target;
+            if (target && target instanceof Element && !dropdown.contains(target) && target !== input) {
+                dropdown.remove();
+                document.removeEventListener('click', closeDropdown);
+            }
+        });
+    }
+
+    function debounceSearch(input, callback) {
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+
+        searchTimeout = setTimeout(() => {
+            const query = input.value.trim();
+            if (query.length >= 2) {
+                callback(query);
+            } else {
+                const existingDropdown = document.querySelector('.autocomplete-dropdown');
+                if (existingDropdown) {
+                    existingDropdown.remove();
+                }
+            }
+        }, 300);
+    }
+
+    function searchAirports(query) {
+        vscode.postMessage({ 
+            type: 'searchAirports', 
+            query: query 
+        });
+    }
+
     // Event listeners
-    loginButton.addEventListener('click', () => {
+    loginButton?.addEventListener('click', () => {
         vscode.postMessage({ type: 'login' });
     });
 
-    applyFiltersBtn.addEventListener('click', () => {
+    applyFiltersBtn?.addEventListener('click', () => {
         const filters = {};
-        if (airportFilter.value.trim()) filters.airport = airportFilter.value.trim();
-        if (flightFilter.value.trim()) filters.flight = flightFilter.value.trim();
+        if (airportFilter && airportFilter instanceof HTMLInputElement && airportFilter.value.trim()) {
+            filters.airport = airportFilter.value.trim();
+        }
+        if (flightFilter && flightFilter instanceof HTMLInputElement && flightFilter.value.trim()) {
+            filters.flight = flightFilter.value.trim();
+        }
         
         vscode.postMessage({ 
             type: 'getSignals', 
@@ -50,9 +135,13 @@
         });
     });
 
-    clearFiltersBtn.addEventListener('click', () => {
-        airportFilter.value = '';
-        flightFilter.value = '';
+    clearFiltersBtn?.addEventListener('click', () => {
+        if (airportFilter && airportFilter instanceof HTMLInputElement) {
+            airportFilter.value = '';
+        }
+        if (flightFilter && flightFilter instanceof HTMLInputElement) {
+            flightFilter.value = '';
+        }
         vscode.postMessage({ 
             type: 'getSignals', 
             filters: {} 
@@ -60,28 +149,30 @@
     });
 
     // Auto-detect checkbox change handler
-    autoDetectCheckbox.addEventListener('change', () => {
+    autoDetectCheckbox?.addEventListener('change', () => {
         toggleManualSettings();
-        if (autoDetectCheckbox.checked) {
+        if (autoDetectCheckbox instanceof HTMLInputElement && autoDetectCheckbox.checked) {
             detectCurrentLocation();
         } else {
             hideCurrentLocation();
         }
     });
 
-    saveSettingsBtn.addEventListener('click', () => {
-        manualFlightInput.classList.remove('invalid');
-        if (manualFlightInput.value && !isValidFlightCode(manualFlightInput.value.trim())) {
-            showNotification('Invalid flight code format');
-            //mark the input as invalid
-            manualFlightInput.classList.add('invalid');
-            return;
+    saveSettingsBtn?.addEventListener('click', () => {
+        if (manualFlightInput && manualFlightInput instanceof HTMLInputElement) {
+            manualFlightInput.classList.remove('invalid');
+            if (manualFlightInput.value && !isValidFlightCode(manualFlightInput.value.trim())) {
+                showNotification('Invalid flight code format');
+                //mark the input as invalid
+                manualFlightInput.classList.add('invalid');
+                return;
+            }
         }
 
         const settings = {
-            autoDetectLocation: autoDetectCheckbox.checked,
-            manualAirport: manualAirportInput.value.trim(),
-            manualFlight: manualFlightInput.value.trim()
+            autoDetectLocation: autoDetectCheckbox instanceof HTMLInputElement ? autoDetectCheckbox.checked : false,
+            manualAirport: manualAirportInput instanceof HTMLInputElement ? manualAirportInput.value.trim() : '',
+            manualFlight: manualFlightInput instanceof HTMLInputElement ? manualFlightInput.value.trim() : ''
         };
         
         vscode.postMessage({ 
@@ -92,10 +183,35 @@
         showNotification('Settings saved!');
     });
 
-    logoutBtn.addEventListener('click', () => {
+    logoutBtn?.addEventListener('click', () => {
         vscode.postMessage({ type: 'logout' });
         showLoginSection();
     });
+
+    // Autocomplete event listeners
+    if (airportFilter && airportFilter instanceof HTMLInputElement) {
+        airportFilter.addEventListener('input', () => {
+            debounceSearch(airportFilter, searchAirports);
+        });
+
+        airportFilter.addEventListener('focus', () => {
+            if (airportFilter.value.trim().length >= 2) {
+                searchAirports(airportFilter.value.trim());
+            }
+        });
+    }
+
+    if (manualAirportInput && manualAirportInput instanceof HTMLInputElement) {
+        manualAirportInput.addEventListener('input', () => {
+            debounceSearch(manualAirportInput, searchAirports);
+        });
+
+        manualAirportInput.addEventListener('focus', () => {
+            if (manualAirportInput.value.trim().length >= 2) {
+                searchAirports(manualAirportInput.value.trim());
+            }
+        });
+    }
 
     // Tab switching
     document.querySelectorAll('.tab-button').forEach(button => {
@@ -110,48 +226,54 @@
         document.querySelectorAll('.tab-button').forEach(btn => {
             btn.classList.remove('active');
         });
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+        if (activeTab) activeTab.classList.add('active');
         
         // Update tab content
         document.querySelectorAll('.tab-content').forEach(content => {
             content.classList.remove('active');
         });
-        document.getElementById(`${tabName}-tab`).classList.add('active');
+        const activeContent = document.getElementById(`${tabName}-tab`);
+        if (activeContent) activeContent.classList.add('active');
         
         // Load data for the tab
         if (tabName === 'feed') {
             loadSignals();
         } else if (tabName === 'settings') {
             loadSettings();
-            if (autoDetectCheckbox.checked) {
+            if (autoDetectCheckbox instanceof HTMLInputElement && autoDetectCheckbox.checked) {
                 detectCurrentLocation();
             }
         }
     }
 
     function showLoginSection() {
-        loginSection.style.display = 'block';
-        appSection.style.display = 'none';
+        if (loginSection) loginSection.style.display = 'block';
+        if (appSection) appSection.style.display = 'none';
         currentUser = null;
     }
 
     function showAppSection() {
-        loginSection.style.display = 'none';
-        appSection.style.display = 'block';
+        if (loginSection) loginSection.style.display = 'none';
+        if (appSection) appSection.style.display = 'block';
     }
 
     function updateUserInfo(user) {
         currentUser = user;
-        userInfo.innerHTML = `
-            <div class="user-profile">
-                <img src="${user.avatar}" alt="${user.username}" class="user-avatar">
-                <a class="username" href="https://github.com/${user.username}">@${user.username}</a>
-            </div>
-        `;
+        if (userInfo) {
+            userInfo.innerHTML = `
+                <div class="user-profile">
+                    <img src="${user.avatar}" alt="${user.username}" class="user-avatar">
+                    <a class="username" href="https://github.com/${user.username}">@${user.username}</a>
+                </div>
+            `;
+        }
     }
 
     function renderSignals(signals) {
         currentSignals = signals;
+        
+        if (!signalsContainer) return;
         
         if (signals.length === 0) {
             signalsContainer.innerHTML = `
@@ -187,7 +309,7 @@
     function formatTime(timestamp) {
         const date = new Date(timestamp);
         const now = new Date();
-        const diffMs = now - date;
+        const diffMs = now.getTime() - date.getTime();
         const diffMins = Math.floor(diffMs / 60000);
         const diffHours = Math.floor(diffMs / 3600000);
         const diffDays = Math.floor(diffMs / 86400000);
@@ -201,7 +323,7 @@
     }
 
     function loadSignals() {
-        signalsContainer.innerHTML = '<div class="loading">Loading signals...</div>';
+        if (signalsContainer) signalsContainer.innerHTML = '<div class="loading">Loading signals...</div>';
         vscode.postMessage({ 
             type: 'getSignals', 
             filters: {} 
@@ -213,31 +335,41 @@
     }
 
     function toggleManualSettings() {
-        if (autoDetectCheckbox.checked) {
-            manualSettingsDiv.classList.add('disabled');
-            manualAirportInput.disabled = true;
-            manualFlightInput.disabled = true;
+        if (autoDetectCheckbox instanceof HTMLInputElement && autoDetectCheckbox.checked) {
+            if (manualSettingsDiv) manualSettingsDiv.classList.add('disabled');
+            if (manualAirportInput && manualAirportInput instanceof HTMLInputElement) {
+                manualAirportInput.disabled = true;
+            }
+            if (manualFlightInput && manualFlightInput instanceof HTMLInputElement) {
+                manualFlightInput.disabled = true;
+            }
         } else {
-            manualSettingsDiv.classList.remove('disabled');
-            manualAirportInput.disabled = false;
-            manualFlightInput.disabled = false;
+            if (manualSettingsDiv) manualSettingsDiv.classList.remove('disabled');
+            if (manualAirportInput && manualAirportInput instanceof HTMLInputElement) {
+                manualAirportInput.disabled = false;
+            }
+            if (manualFlightInput && manualFlightInput instanceof HTMLInputElement) {
+                manualFlightInput.disabled = false;
+            }
         }
     }
 
     function detectCurrentLocation() {
-        currentLocationDiv.style.display = 'block';
-        locationInfoDiv.innerHTML = '<div class="location-loading">Detecting location...</div>';
+        if (currentLocationDiv) currentLocationDiv.style.display = 'block';
+        if (locationInfoDiv) locationInfoDiv.innerHTML = '<div class="location-loading">Detecting location...</div>';
         
         vscode.postMessage({ type: 'getCurrentLocation' });
     }
 
     function hideCurrentLocation() {
-        currentLocationDiv.style.display = 'none';
+        if (currentLocationDiv) currentLocationDiv.style.display = 'none';
         currentLocation = null;
     }
 
     function updateLocationDisplay(location, airport) {
         currentLocation = location;
+        
+        if (!locationInfoDiv) return;
         
         let locationHTML = `
             <div class="location-details">
@@ -315,16 +447,31 @@
                 break;
                 
             case 'airports':
-                // Handle airport search results if needed
+                currentAirports = message.data || [];
+                // This will be handled by the specific input that triggered the search
+                break;
+                
+            case 'airportSearchResults':
+                // Create autocomplete dropdown for the active input
+                const activeElement = document.activeElement;
+                if (activeElement && (activeElement === airportFilter || activeElement === manualAirportInput)) {
+                    createAutocompleteDropdown(activeElement, message.data);
+                }
                 break;
                 
             case 'settings':
                 if (message.data) {
-                    autoDetectCheckbox.checked = message.data.autoDetectLocation !== false;
-                    manualAirportInput.value = message.data.manualAirport || '';
-                    manualFlightInput.value = message.data.manualFlight || '';
+                    if (autoDetectCheckbox && autoDetectCheckbox instanceof HTMLInputElement) {
+                        autoDetectCheckbox.checked = message.data.autoDetectLocation !== false;
+                    }
+                    if (manualAirportInput && manualAirportInput instanceof HTMLInputElement) {
+                        manualAirportInput.value = message.data.manualAirport || '';
+                    }
+                    if (manualFlightInput && manualFlightInput instanceof HTMLInputElement) {
+                        manualFlightInput.value = message.data.manualFlight || '';
+                    }
                     toggleManualSettings();
-                    if (autoDetectCheckbox.checked) {
+                    if (autoDetectCheckbox instanceof HTMLInputElement && autoDetectCheckbox.checked) {
                         detectCurrentLocation();
                     } else {
                         hideCurrentLocation();
@@ -336,7 +483,7 @@
                 if (message.data) {
                     updateLocationDisplay(message.data.location, message.data.airport);
                 } else {
-                    locationInfoDiv.innerHTML = '<div class="location-loading">Unable to detect location</div>';
+                    if (locationInfoDiv) locationInfoDiv.innerHTML = '<div class="location-loading">Unable to detect location</div>';
                 }
                 break;
                 
