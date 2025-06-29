@@ -59,11 +59,6 @@
     "configuration": {
       "title": "AirCommits",
       "properties": {
-        "aircommits.supabaseUrl": {
-          "type": "string",
-          "default": "http://localhost:54321",
-          "description": "Supabase project URL (local development)"
-        },
         "aircommits.autoDetectLocation": {
           "type": "boolean",
           "default": true,
@@ -87,8 +82,9 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "npm run build:config && tsc -p ./",
+    "build:config": "node scripts/build-config.js",
+    "watch": "npm run build:config && tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"

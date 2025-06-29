@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
+import { SUPABASE_URL } from './config';
 
 export interface Location {
   latitude: number;
@@ -40,7 +41,7 @@ export class AirCommitsService {
   private token: string | undefined;
 
   constructor() {
-    this.supabaseUrl = vscode.workspace.getConfiguration('aircommits').get('supabaseUrl', 'http://localhost:54321');
+    this.supabaseUrl = SUPABASE_URL;
   }
 
   async initialize(context: vscode.ExtensionContext): Promise<void> {

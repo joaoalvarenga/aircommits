@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { AirCommitsViewProvider } from './AirCommitsView';
 import { AirCommitsService } from './AirCommitsService';
+import { SUPABASE_URL } from './config';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log(`AirCommits extension activated.`);
@@ -17,8 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register commands
 	context.subscriptions.push(vscode.commands.registerCommand('aircommits.login', async () => {
-		const supabaseUrl = vscode.workspace.getConfiguration('aircommits').get('supabaseUrl', 'http://localhost:54321');
-		vscode.env.openExternal(vscode.Uri.parse(`${supabaseUrl}/functions/v1/auth-github?schema=${vscode.env.uriScheme}`));
+		vscode.env.openExternal(vscode.Uri.parse(`${SUPABASE_URL}/functions/v1/auth-github?schema=${vscode.env.uriScheme}`));
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('aircommits.openSettings', () => {
