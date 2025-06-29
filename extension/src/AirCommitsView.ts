@@ -122,6 +122,17 @@ export class AirCommitsViewProvider implements vscode.WebviewViewProvider {
 						</div>
 						
 						<div class="settings-section">
+							<h3>Auto-Publish Settings</h3>
+							<div class="setting-item">
+								<label>
+									<input type="checkbox" id="auto-publish" checked>
+									Automatically publish signals when files are saved
+								</label>
+								<p class="setting-description">When enabled, AirCommits will automatically send signals whenever you save a file in VS Code.</p>
+							</div>
+						</div>
+						
+						<div class="settings-section">
 							<h3>Account</h3>
 							<button id="logout-btn" class="logout-btn">Logout</button>
 						</div>

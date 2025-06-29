@@ -30,6 +30,7 @@
     const currentLocationDiv = document.getElementById('current-location');
     const locationInfoDiv = document.getElementById('location-info');
     const manualSettingsDiv = document.getElementById('manual-settings');
+    const autoPublishCheckbox = document.getElementById('auto-publish');
 
     const isValidFlightCode = (flight) => {
         const regex = /^[A-Z]{2}\d{4}$/;
@@ -172,7 +173,8 @@
         const settings = {
             autoDetectLocation: autoDetectCheckbox instanceof HTMLInputElement ? autoDetectCheckbox.checked : false,
             manualAirport: manualAirportInput instanceof HTMLInputElement ? manualAirportInput.value.trim() : '',
-            manualFlight: manualFlightInput instanceof HTMLInputElement ? manualFlightInput.value.trim() : ''
+            manualFlight: manualFlightInput instanceof HTMLInputElement ? manualFlightInput.value.trim() : '',
+            autoPublish: autoPublishCheckbox instanceof HTMLInputElement ? autoPublishCheckbox.checked : false
         };
         
         vscode.postMessage({ 
@@ -469,6 +471,9 @@
                     }
                     if (manualFlightInput && manualFlightInput instanceof HTMLInputElement) {
                         manualFlightInput.value = message.data.manualFlight || '';
+                    }
+                    if (autoPublishCheckbox && autoPublishCheckbox instanceof HTMLInputElement) {
+                        autoPublishCheckbox.checked = message.data.autoPublish !== false;
                     }
                     toggleManualSettings();
                     if (autoDetectCheckbox instanceof HTMLInputElement && autoDetectCheckbox.checked) {

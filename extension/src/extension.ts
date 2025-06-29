@@ -34,6 +34,15 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.onDidSaveTextDocument(async (document) => {
 			// Only send signals for user files, not extension files
 			if (document.uri.scheme === 'file' && !document.uri.fsPath.includes('node_modules')) {
+				// Check if auto-publish is enabled
+				const config = vscode.workspace.getConfiguration('aircommits');
+				const autoPublish = config.get('autoPublish', true);
+				
+				if (!autoPublish) {
+					console.log('Auto-publish is disabled, skipping signal');
+					return;
+				}
+				
 				try {
 					const success = await service.sendSignal();
 					if (success) {
@@ -109,6 +118,7 @@ export function activate(context: vscode.ExtensionContext) {
 				await config.update('autoDetectLocation', message.settings.autoDetectLocation, vscode.ConfigurationTarget.Global);
 				await config.update('manualAirport', message.settings.manualAirport, vscode.ConfigurationTarget.Global);
 				await config.update('manualFlight', message.settings.manualFlight, vscode.ConfigurationTarget.Global);
+				await config.update('autoPublish', message.settings.autoPublish, vscode.ConfigurationTarget.Global);
 				provider.postMessage({ type: 'settingsSaved' });
 				return;
 			case 'getSettings':
@@ -118,7 +128,8 @@ export function activate(context: vscode.ExtensionContext) {
 					data: {
 						autoDetectLocation: currentConfig.get('autoDetectLocation', true),
 						manualAirport: currentConfig.get('manualAirport', ''),
-						manualFlight: currentConfig.get('manualFlight', '')
+						manualFlight: currentConfig.get('manualFlight', ''),
+						autoPublish: currentConfig.get('autoPublish', true)
 					}
 				});
 				return;
