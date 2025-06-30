@@ -37,22 +37,35 @@ export interface User {
 }
 
 export class AirCommitsService {
+  private context: vscode.ExtensionContext;
   private supabaseUrl: string;
   private supabaseAnonKey: string;
   private token: string | undefined;
+  private refreshToken: string | undefined;
+  private expiresAt: number | undefined;
 
-  constructor() {
+  constructor(context: vscode.ExtensionContext) {
+    this.context = context;
     this.supabaseUrl = SUPABASE_URL;
     this.supabaseAnonKey = SUPABASE_ANON_KEY;
   }
 
-  async initialize(context: vscode.ExtensionContext): Promise<void> {
-    this.token = await context.secrets.get('aircommits.token');
+  async initialize(): Promise<void> {
+    this.token = await this.context.secrets.get('aircommits.token');
+    this.refreshToken = await this.context.secrets.get('aircommits.refreshToken');
+    const expiresAt = await this.context.secrets.get('aircommits.expiresAt');
+    if (expiresAt) {
+      this.expiresAt = parseInt(expiresAt, 10);
+    }
   }
 
-  async setToken(token: string, context: vscode.ExtensionContext): Promise<void> {
+  async setToken(token: string, refreshToken: string, expiresAt: number): Promise<void> {
     this.token = token;
-    await context.secrets.store('aircommits.token', token);
+    this.refreshToken = refreshToken;
+    this.expiresAt = expiresAt
+    await this.context.secrets.store('aircommits.token', token);
+    await this.context.secrets.store('aircommits.refreshToken', token);
+    await this.context.secrets.store('aircommits.expiresAt', expiresAt.toString());
   }
 
   private getHeaders(): Record<string, string> {
@@ -68,8 +81,36 @@ export class AirCommitsService {
     return headers;
   }
 
+  async callRefreshToken(): Promise<any | null> {
+    try {
+      const tokenData = {
+        refresh_token: this.refreshToken
+      }
+      const response = await axios.post(`${this.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, tokenData, {
+        headers: this.getHeaders()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      return null;
+    }
+  }
+
   async getCurrentUser(): Promise<User | null> {
     if (!this.token) return null;
+
+    if (!this.expiresAt || Math.floor(Date.now() / 1000) > this.expiresAt) {
+      const response = await this.callRefreshToken();
+      if (!response) {
+        return null;
+      }
+      await this.setToken(
+        response.access_token,
+        response.refresh_token,
+        response.expires_at,
+      )
+      return response.user;
+    }
 
     try {
       const response = await axios.get(`${this.supabaseUrl}/auth/v1/user`, {

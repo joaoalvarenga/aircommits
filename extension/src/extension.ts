@@ -4,7 +4,7 @@ import { AirCommitsService } from './AirCommitsService';
 import { SUPABASE_URL } from './config';
 
 
-function getAccessTokenFromFragment(fragment: string): string | undefined {
+function getAccessTokenFromFragment(fragment: string) {
 	if (!fragment) {
 		return;
 	}
@@ -12,21 +12,33 @@ function getAccessTokenFromFragment(fragment: string): string | undefined {
 	if (!parts) {
 		return;
 	}
-	const accessTokenPart = parts.find((element) => element.indexOf('access_token=') > -1);
+	const accessTokenPart = parts.find((element) => element.startsWith('access_token='));
 	if (!accessTokenPart) {
 		return;
 	}
-	return accessTokenPart.replace('access_token=', '');
+	const refreshTokenPart = parts.find((element) => element.startsWith('refresh_token='));
+	if (!refreshTokenPart) {
+		return;
+	}
+	const expiresAtPart = parts.find((element) => element.startsWith('expires_at='));
+	if (!expiresAtPart) {
+		return;
+	}
+	return {
+		accessToken: accessTokenPart.replace('access_token=', ''),
+		refreshToken: refreshTokenPart.replace('refresh_token=', ''),
+		expiresAt: parseInt(expiresAtPart.replace('expires_at=', ''), 10)
+	}
 }
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log(`AirCommits extension activated.`);
 
-	const service = new AirCommitsService();
+	const service = new AirCommitsService(context);
 	const provider = new AirCommitsViewProvider(context.extensionUri, service);
 
 	// Initialize service
-	service.initialize(context);
+	service.initialize();
 
 	console.log(`Registering webview view provider with ID: ${AirCommitsViewProvider.viewType}`);
 	context.subscriptions.push(
@@ -80,7 +92,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (uri.path === '/auth/callback') {
 				const token = getAccessTokenFromFragment(uri.fragment);
 				if (token) {
-					service.setToken(token, context);
+					service.setToken(token.accessToken, token.refreshToken, token.expiresAt);
 					vscode.window.showInformationMessage('Successfully logged in to AirCommits!');
 					provider.postMessage({ type: 'loggedIn' });
 				} else {
