@@ -13,3 +13,4 @@ out/
 package-lock.json
 .branches/
 .temp/
+deploy.sh

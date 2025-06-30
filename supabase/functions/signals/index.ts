@@ -22,10 +22,16 @@ serve(async (req) => {
   try {
     // Create Supabase client
     const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { global: { headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` } } });
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization') },
+        },
+      }
+    )
+
+    const {data: {user}} = await supabaseClient.auth.getUser()
 
     if (req.method === 'GET') {
       // Get signals with optional filters
@@ -36,31 +42,6 @@ serve(async (req) => {
 
       // Check if this is a request for user's own signals
       if (url.pathname.endsWith('/my')) {
-        const authHeader = req.headers.get('authorization')
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          return new Response(
-            JSON.stringify({ error: 'No token provided' }),
-            { 
-              status: 401, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          )
-        }
-
-        const token = authHeader.replace('Bearer ', '')
-        const jwtSecret = Deno.env.get('JWT_SECRET')
-        const decoded = await verifyJWT(token, jwtSecret)
-        
-        if (!decoded) {
-          return new Response(
-            JSON.stringify({ error: 'Invalid token' }),
-            { 
-              status: 401, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          )
-        }
-
         // Get user's signals
         const { data: signals, error } = await supabaseClient
           .from('signals')
@@ -74,7 +55,7 @@ serve(async (req) => {
             timestamp,
             users!inner(id, username, avatar)
           `)
-          .eq('user_id', decoded.id)
+          .eq('user_id', user.id)
           .order('timestamp', { ascending: false })
           .limit(limit)
 
@@ -153,49 +134,7 @@ serve(async (req) => {
 
     } else if (req.method === 'POST') {
       // Create a new signal
-      const authHeader = req.headers.get('authorization')
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return new Response(
-          JSON.stringify({ error: 'No token provided' }),
-          { 
-            status: 401, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-
-      const token = authHeader.replace('Bearer ', '')
-      const jwtSecret = Deno.env.get('JWT_SECRET')
-      const decoded = await verifyJWT(token, jwtSecret)
-      
-      if (!decoded) {
-        return new Response(
-          JSON.stringify({ error: 'Invalid token' }),
-          { 
-            status: 401, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-
       const { airport, flight, latitude, longitude } = await req.json()
-
-      // Get user from database
-      const { data: user, error: userError } = await supabaseClient
-        .from('users')
-        .select('id')
-        .eq('id', decoded.id)
-        .single()
-
-      if (userError || !user) {
-        return new Response(
-          JSON.stringify({ error: 'User not found' }),
-          { 
-            status: 404, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
       if (flight && !isValidFlightCode(flight)) {
         return new Response(
           JSON.stringify({ error: 'Invalid flight code format' }),
@@ -206,22 +145,24 @@ serve(async (req) => {
         )
       }
 
+      let airportName = airport;
       if (airport) {
         const { data: existingAirport, error: airportError } = await supabaseClient
           .from('airports')
-          .select('code')
+          .select('name, code')
           .eq('code', airport)
           .single()
 
         if (airportError || !existingAirport) {
           return new Response(
-          JSON.stringify({ error: 'Airport not found' }),
-          { 
-            status: 404, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
+            JSON.stringify({ error: 'Airport not found' }),
+            { 
+              status: 404, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
         }
+        airportName = existingAirport.name;
       }
 
       const now = new Date();
@@ -244,7 +185,7 @@ serve(async (req) => {
         )
       }
 
-      const message = `Working from ${airport || flight}`;
+      const message = `Working from ${airportName || flight}`;
 
       // Create signal
       const { data: signal, error: signalError } = await supabaseClient
@@ -295,32 +236,6 @@ serve(async (req) => {
         }
       )
     } else if (req.method === 'DELETE') {
-      // Delete a signal
-      const authHeader = req.headers.get('authorization')
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return new Response(
-          JSON.stringify({ error: 'No token provided' }),
-          { 
-            status: 401, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-
-      const token = authHeader.replace('Bearer ', '')
-      const jwtSecret = Deno.env.get('JWT_SECRET')
-      const decoded = await verifyJWT(token, jwtSecret)
-      
-      if (!decoded) {
-        return new Response(
-          JSON.stringify({ error: 'Invalid token' }),
-          { 
-            status: 401, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-
       const url = new URL(req.url)
       const signalId = url.pathname.split('/').pop()
 
@@ -351,7 +266,7 @@ serve(async (req) => {
         )
       }
 
-      if (signal.user_id !== decoded.id) {
+      if (signal.user_id !== user.id) {
         return new Response(
           JSON.stringify({ error: 'Unauthorized to delete this signal' }),
           { 
@@ -397,43 +312,3 @@ serve(async (req) => {
     )
   }
 })
-
-async function verifyJWT(token: string, secret: string): Promise<any> {
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-
-    const [headerB64, payloadB64, signatureB64] = parts
-    
-    // Verify signature
-    const encoder = new TextEncoder()
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['verify']
-    )
-
-    const signature = Uint8Array.from(atob(signatureB64), c => c.charCodeAt(0))
-    const isValid = await crypto.subtle.verify(
-      'HMAC',
-      key,
-      signature,
-      encoder.encode(`${headerB64}.${payloadB64}`)
-    )
-
-    if (!isValid) return null
-
-    // Decode payload
-    const payload = JSON.parse(atob(payloadB64))
-    
-    // Check expiration
-    const now = Math.floor(Date.now() / 1000)
-    if (payload.exp && payload.exp < now) return null
-
-    return payload
-  } catch (error) {
-    return null
-  }
-} 

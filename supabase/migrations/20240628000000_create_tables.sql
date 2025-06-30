@@ -1,13 +1,12 @@
 -- Create users table
 CREATE TABLE IF NOT EXISTS public.users (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    github_id TEXT UNIQUE NOT NULL,
-    username TEXT NOT NULL,
-    email TEXT NOT NULL,
-    avatar TEXT NOT NULL,
-    access_token TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  id uuid not null default gen_random_uuid (),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  github_id text null,
+  username text null,
+  avatar text null,
+  constraint users_pkey primary key (id),
+  constraint users_id_fkey foreign KEY (id) references auth.users (id)
 );
 
 -- Create airports table
@@ -38,7 +37,6 @@ CREATE TABLE IF NOT EXISTS public.signals (
 );
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_users_github_id ON public.users(github_id);
 CREATE INDEX IF NOT EXISTS idx_airports_code ON public.airports(code);
 CREATE INDEX IF NOT EXISTS idx_airports_location ON public.airports(latitude, longitude);
 CREATE INDEX IF NOT EXISTS idx_signals_user_id ON public.signals(user_id);
@@ -51,14 +49,13 @@ ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.airports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.signals ENABLE ROW LEVEL SECURITY;
 
--- Create RLS policies
--- Users can read their own data
-CREATE POLICY "Users can view own data" ON public.users
-    FOR SELECT USING (auth.uid()::text = id::text);
+-- Create policies for users table
+CREATE POLICY "Users can view their own data" ON public.users
+    FOR SELECT USING (auth.uid() = id);
 
--- Users can update their own data
-CREATE POLICY "Users can update own data" ON public.users
-    FOR UPDATE USING (auth.uid()::text = id::text);
+-- Users can insert their own signals
+CREATE POLICY "Users can insert their own data" ON public.users
+    FOR INSERT WITH CHECK (auth.uid()::text = id::text);
 
 -- Anyone can read airports (public data)
 CREATE POLICY "Anyone can view airports" ON public.airports
@@ -90,11 +87,21 @@ END;
 $$ language 'plpgsql';
 
 -- Create triggers to automatically update updated_at
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_airports_updated_at BEFORE UPDATE ON public.airports
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_signals_updated_at BEFORE UPDATE ON public.signals
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column(); 
+
+-- Create function to insert user data when a new user is created
+CREATE OR REPLACE FUNCTION insert_user_data()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.users (id, github_id, username, avatar) VALUES (NEW.id, NEW.raw_user_meta_data->>'sub', NEW.raw_user_meta_data->>'user_name', NEW.raw_user_meta_data->>'avatar_url');
+    RETURN NEW;
+END;
+$$ language 'plpgsql' security definer;
+
+-- Create trigger to insert user data when a new user is created
+CREATE TRIGGER insert_user_data AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION insert_user_data();   

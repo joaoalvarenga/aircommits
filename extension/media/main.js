@@ -264,12 +264,16 @@
     }
 
     function updateUserInfo(user) {
-        currentUser = user;
+        currentUser = {
+            id: user.id,
+            username: user.user_metadata.user_name,
+            avatar: user.user_metadata.avatar_url,
+        };
         if (userInfo) {
             userInfo.innerHTML = `
                 <div class="user-profile">
-                    <img src="${user.avatar}" alt="${user.username}" class="user-avatar">
-                    <a class="username" href="https://github.com/${user.username}">@${user.username}</a>
+                    <img src="${currentUser.avatar}" alt="${currentUser.username}" class="user-avatar">
+                    <a class="username" href="https://github.com/${currentUser.username}">@${currentUser.username}</a>
                 </div>
             `;
         }

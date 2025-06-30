@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
-import { SUPABASE_URL } from './config';
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from './config';
 
 export interface Location {
   latitude: number;
@@ -38,10 +38,12 @@ export interface User {
 
 export class AirCommitsService {
   private supabaseUrl: string;
+  private supabaseAnonKey: string;
   private token: string | undefined;
 
   constructor() {
     this.supabaseUrl = SUPABASE_URL;
+    this.supabaseAnonKey = SUPABASE_ANON_KEY;
   }
 
   async initialize(context: vscode.ExtensionContext): Promise<void> {
@@ -60,6 +62,7 @@ export class AirCommitsService {
     
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
+      headers['apikey'] = this.supabaseAnonKey;
     }
     
     return headers;
@@ -69,7 +72,7 @@ export class AirCommitsService {
     if (!this.token) return null;
 
     try {
-      const response = await axios.get(`${this.supabaseUrl}/functions/v1/auth-me`, {
+      const response = await axios.get(`${this.supabaseUrl}/auth/v1/user`, {
         headers: this.getHeaders()
       });
       return response.data;

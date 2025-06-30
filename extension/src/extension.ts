@@ -3,6 +3,22 @@ import { AirCommitsViewProvider } from './AirCommitsView';
 import { AirCommitsService } from './AirCommitsService';
 import { SUPABASE_URL } from './config';
 
+
+function getAccessTokenFromFragment(fragment: string): string | undefined {
+	if (!fragment) {
+		return;
+	}
+	const parts = fragment.split('&');
+	if (!parts) {
+		return;
+	}
+	const accessTokenPart = parts.find((element) => element.indexOf('access_token=') > -1);
+	if (!accessTokenPart) {
+		return;
+	}
+	return accessTokenPart.replace('access_token=', '');
+}
+
 export function activate(context: vscode.ExtensionContext) {
 	console.log(`AirCommits extension activated.`);
 
@@ -18,7 +34,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register commands
 	context.subscriptions.push(vscode.commands.registerCommand('aircommits.login', async () => {
-		vscode.env.openExternal(vscode.Uri.parse(`${SUPABASE_URL}/functions/v1/auth-github?schema=${vscode.env.uriScheme}`));
+		const redirectUrl = `${vscode.env.uriScheme}://joaoalvarenga.aircommits/auth/callback`
+		vscode.env.openExternal(vscode.Uri.parse(`${SUPABASE_URL}/auth/v1/authorize?provider=github&redirect_to=${redirectUrl}`));
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('aircommits.openSettings', () => {
@@ -61,8 +78,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.window.registerUriHandler({
 		handleUri(uri: vscode.Uri): vscode.ProviderResult<void> {
 			if (uri.path === '/auth/callback') {
-				const query = new URLSearchParams(uri.query);
-				const token = query.get('token');
+				const token = getAccessTokenFromFragment(uri.fragment);
 				if (token) {
 					service.setToken(token, context);
 					vscode.window.showInformationMessage('Successfully logged in to AirCommits!');

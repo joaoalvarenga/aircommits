@@ -83,7 +83,7 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "npm run build:config && tsc -p ./",
-    "build:config": "node scripts/build-config.js",
+    "build:config": "source .env && node scripts/build-config.js",
     "watch": "npm run build:config && tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
