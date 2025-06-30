@@ -609,3 +609,7 @@ input.invalid {
 .confirm-btn:hover {
     background-color: var(--vscode-inputValidation-errorHoverBackground);
 }
+
+.hide {
+    display: none !important;
+}

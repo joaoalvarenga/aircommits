@@ -58,7 +58,7 @@ export class AirCommitsViewProvider implements vscode.WebviewViewProvider {
 				<title>AirCommits</title>
 			</head>
 			<body>
-				<div id="login-section">
+				<div id="login-section" class="hide">
 					<div class="header">
 						<h1>✈️ AirCommits</h1>
 						<p>Connect with developers at airports and on flights</p>
@@ -66,7 +66,7 @@ export class AirCommitsViewProvider implements vscode.WebviewViewProvider {
 					<button id="login-button" class="login-btn">Login with GitHub</button>
 				</div>
 				
-				<div id="app-section" style="display: none;">
+				<div id="app-section" class="hide">
 					<div class="header">
 						<h2>✈️ AirCommits</h2>
 						<div id="user-info" class="user-info"></div>

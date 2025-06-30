@@ -253,14 +253,14 @@
     }
 
     function showLoginSection() {
-        if (loginSection) loginSection.style.display = 'block';
-        if (appSection) appSection.style.display = 'none';
+        if (loginSection) loginSection.classList.remove('hide');
+        if (appSection) appSection.classList.add('hide');
         currentUser = null;
     }
 
     function showAppSection() {
-        if (loginSection) loginSection.style.display = 'none';
-        if (appSection) appSection.style.display = 'block';
+        if (loginSection) loginSection.classList.add('hide');
+        if (appSection) appSection.classList.remove('hide');
     }
 
     function updateUserInfo(user) {
@@ -529,13 +529,15 @@
                 break;
                 
             case 'currentUser':
-                if (message.data) {
-                    if (currentUser === null) {
-                        showAppSection();
-                        loadSignals();
-                    }
-                    updateUserInfo(message.data);
+                if (!message.data) {
+                    showLoginSection();
+                    break;
                 }
+                if (currentUser === null) {
+                    showAppSection();
+                    loadSignals();
+                }
+                updateUserInfo(message.data);
                 break;
                 
             case 'signals':
@@ -620,7 +622,6 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-        showLoginSection();
         vscode.postMessage({ type: 'getCurrentUser' });
     });
 })();
