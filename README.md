@@ -233,14 +233,10 @@ This project was migrated from a local Express server to Supabase Edge Functions
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+Apache License 2.0 - see [LICENSE.md](LICENSE.md) file for details.
 
 ## 🙏 Acknowledgments
 
 - [Supabase](https://supabase.com) for the amazing backend platform
 - [VS Code](https://code.visualstudio.com) for the extensible editor
 - [GitHub](https://github.com) for OAuth authentication 
-
-## TODO
-- Add all airports
-- Publish

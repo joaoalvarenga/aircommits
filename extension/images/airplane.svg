@@ -1,1 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M21.4,14.6l-7.9-7.9C13.1,6.3,12.6,6,12,6s-1.1,0.3-1.5,0.7L2.6,14.6c-0.8,0.8-0.8,2,0,2.8l1.4,1.4c0.8,0.8,2,0.8,2.8,0l7.2-7.2l7.2,7.2c0.8,0.8,2,0.8,2.8,0l1.4-1.4C22.2,16.6,22.2,15.4,21.4,14.6z"/></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 24 24"
+   width="24"
+   height="24"
+   fill="currentColor"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="airplane.svg"
+   inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="5.4620342"
+     inkscape:cx="-19.223607"
+     inkscape:cy="14.646558"
+     inkscape:window-width="1728"
+     inkscape:window-height="953"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <path
+     id="path2"
+     style="fill:#000000;stroke-width:48.3069"
+     d="M 12,2.1132976 A 9.8862534,9.8865262 0 0 0 2.1132977,12 9.8862534,9.8865262 0 0 0 12,21.886702 9.8862534,9.8865262 0 0 0 21.886702,12 9.8862534,9.8865262 0 0 0 12,2.1132976 Z m -1.085902,5.6055021 c 0.383435,0 0.702965,0.1912188 0.958589,0.4468427 l 5.047573,5.0488206 c 0.511247,0.511248 0.511247,1.277371 2.556239,1.788618 l -0.893685,0.894933 c -0.511248,0.511248 -1.278618,0.511248 -1.789866,0 l -4.600731,-4.600729 -4.6019783,4.600729 c -0.5112478,0.511248 -1.2773704,0.511248 -1.7886182,0 L 4.906687,15.003081 c -0.5112477,-0.511247 -0.5112477,-1.27737 0,-1.788618 L 9.955508,8.1656424 c 0.255624,-0.2556239 0.575154,-0.4468427 0.95859,-0.4468427 z" />
+</svg>

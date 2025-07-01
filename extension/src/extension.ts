@@ -31,6 +31,17 @@ function getAccessTokenFromFragment(fragment: string) {
 	}
 }
 
+async function clearUserContext(context: vscode.ExtensionContext) {
+	await context.secrets.delete('aircommits.token');
+	await context.secrets.delete('aircommits.refreshToken');
+	await context.secrets.delete('aircommits.expiresAt');
+	const resetConfig = vscode.workspace.getConfiguration('aircommits');
+	await resetConfig.update('autoDetectLocation', true, vscode.ConfigurationTarget.Global);
+	await resetConfig.update('manualAirport', '', vscode.ConfigurationTarget.Global);
+	await resetConfig.update('manualFlight', '', vscode.ConfigurationTarget.Global);
+	await resetConfig.update('autoPublish', true, vscode.ConfigurationTarget.Global);
+}
+
 export function activate(context: vscode.ExtensionContext) {
 	console.log(`AirCommits extension activated.`);
 
@@ -46,6 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register commands
 	context.subscriptions.push(vscode.commands.registerCommand('aircommits.login', async () => {
+		await clearUserContext(context);
 		const redirectUrl = `${vscode.env.uriScheme}://joaoalvarenga.aircommits/auth/callback`
 		vscode.env.openExternal(vscode.Uri.parse(`${SUPABASE_URL}/auth/v1/authorize?provider=github&redirect_to=${redirectUrl}`));
 	}));
@@ -162,7 +174,7 @@ export function activate(context: vscode.ExtensionContext) {
 				});
 				return;
 			case 'logout':
-				await context.secrets.delete('aircommits.token');
+				await clearUserContext(context);
 				provider.postMessage({ type: 'loggedOut' });
 				vscode.window.showInformationMessage('Logged out from AirCommits');
 				return;

@@ -1,0 +1,10 @@
+.env
+.vscode
+src/
+scripts/
+out/
+node_modules
+tsconfig.json
+webpack.config.js
+esbuild.js
+.DS_Store

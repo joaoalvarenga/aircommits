@@ -17,7 +17,6 @@
     const loginButton = document.getElementById('login-button');
     const userInfo = document.getElementById('user-info');
     const signalsContainer = document.getElementById('signals-container');
-    const signalMessage = document.getElementById('signal-message');
     const airportFilter = document.getElementById('airport-filter');
     const flightFilter = document.getElementById('flight-filter');
     const applyFiltersBtn = document.getElementById('apply-filters');
