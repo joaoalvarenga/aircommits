@@ -3,7 +3,7 @@
   "name": "aircommits",
   "displayName": "AirCommits",
   "description": "Connect with other developers at the same airport or on the same flight.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "icon": "images/airplane_256.png",
   "engines": {
     "vscode": "^1.96.2"

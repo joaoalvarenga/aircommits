@@ -15,4 +15,4 @@ package-lock.json
 .temp/
 deploy.sh
 .DS_Store
-dist/**
+dist/
